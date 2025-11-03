@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FFFFFF">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>𝔄𝔭𝔬𝔩𝔩𝔶𝔬𝔫-١١٣</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="login-container">
+        <h2>𝔄𝔭𝔬𝔩𝔩𝔶𝔬𝔫-١١٣</h2>
+        
+        <img src="apollyon2.jpg" alt="Header Image" class="header-image">
+        
+        <h3>Login Account</h3>
+        <p class="contact-info">Please enter your credentials to access the dashboard<br>contact tele @brodyassfvck jika belum memiliki akses</p>
+
+        <!-- Form diberi ID baru -->
+        <form action="/login" method="POST" id="login-form">
+            <label for="username">USERNAME</label>
+            <!-- Input diberi ID baru -->
+            <input type="text" id="username-input" name="username" placeholder="Enter your username">
+            
+            <label for="password">PASSWORD</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password">
+            
+            <button type="submit" class="login-button">➔ LOGIN</button>
+        </form>
+    </div>
+
+    <!-- SCRIPT BARU UNTUK MENYIMPAN USERNAME -->
+    <script>
+        document.getElementById('login-form').addEventListener('submit', () => {
+            // Ambil username dari kotak input
+            const username = document.getElementById('username-input').value;
+            
+            // Simpan di penyimpanan browser
+            localStorage.setItem('loggedInUser', username);
+        });
+    </script>
+
+    <!-- AKHIR SCRIPT BARU -->
+     <script>
+  // Daftarkan Service Worker
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(reg => console.log('Service worker terdaftar', reg))
+        .catch(err => console.log('Gagal daftar service worker', err));
+    });
+  }
+</script>
+
+</body>
+</html>

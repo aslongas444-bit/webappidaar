@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="/socket.io/socket.io.js"></script> 
+    <style>
+        /* Pengaturan Global */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0d021a;
+            color: #e0e0e0;
+            margin: 0;
+            padding-bottom: 100px; 
+            background-image: radial-gradient(#301934 1px, transparent 1px);
+            background-size: 15px 15px;
+        }
+
+        /* Header (Judul Atas) */
+        .header {
+            background-color: #1e0a38;
+            padding: 15px 20px;
+            text-align: center;
+            border-bottom: 1px solid #9d00ff;
+            box-shadow: 0 4px 15px rgba(157, 0, 255, 0.4);
+            color: #ffffff;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        /* Navigasi Atas */
+        .top-nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: #130525;
+            padding: 15px 0;
+            border-bottom: 1px solid #9d00ff;
+        }
+        .top-nav a {
+            color: #e0e0e0;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9em;
+            padding: 10px 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+        }
+        .top-nav a:hover {
+            background-color: #9d00ff;
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(157, 0, 255, 0.7);
+        }
+
+        /* Area Konten Utama */
+        .main-content {
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Pengaturan Halaman SPA */
+        .page-content {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        .page-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Styling umum untuk box konten */
+        .profile-summary { margin-bottom: 25px; }
+        .profile-summary img { width: 100px; height: 100px; border-radius: 50%; border: 3px solid #9d00ff; box-shadow: 0 0 10px rgba(157, 0, 255, 0.7); margin-bottom: 10px; }
+        .profile-summary .user-id { font-size: 2.5em; font-weight: bold; color: #ffffff; margin: 0; }
+        .profile-summary .user-details { font-size: 0.9em; color: #b3b3b3; }
+        .profile-summary .user-details strong { color: #e0e0e0; }
+
+        .content-box {
+            background: #1e0a38;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #9d00ff;
+            box-shadow: 0 0 15px rgba(157, 0, 255, 0.7);
+            width: 90%;
+            max-width: 450px;
+            box-sizing: border-box;
+            display: inline-block;
+            text-align: left;
+        }
+        
+        .content-box form { display: flex; flex-direction: column; }
+        .content-box label { margin-top: 15px; margin-bottom: 5px; font-weight: bold; color: #e0e0e0; font-size: 0.9em; text-transform: uppercase; }
+        .content-box input[type="text"], .content-box select { background-color: #2b0f4d; border: 1px solid #9d00ff; border-radius: 8px; padding: 12px; color: #ffffff; font-size: 1em; outline: none; width: 100%; box-sizing: border-box; }
+        .content-box select { color-scheme: dark; }
+        .content-box input[type="text"]:focus, .content-box select:focus { box-shadow: 0 0 10px rgba(157, 0, 255, 0.7); }
+        .content-box input::placeholder { color: #777; }
+        
+        /* --- PERBAIKAN CSS UNTUK TOMBOL --- */
+        .neon-button { 
+            background-color: #9d00ff; 
+            border: none; 
+            border-radius: 8px; 
+            padding: 12px; 
+            margin-top: 25px; 
+            color: #ffffff; 
+            font-weight: bold; 
+            font-size: 1.1em; 
+            cursor: pointer; 
+            box-shadow: 0 0 10px rgba(157, 0, 255, 0.7); 
+            transition: all 0.3s ease; 
+            display: flex; /* <-- Ini membuat ikon & teks rata tengah */
+            justify-content: center; /* <-- Ini membuat ikon & teks rata tengah */
+            align-items: center; /* <-- Ini membuat ikon & teks rata tengah */
+            width: 100%;
+        }
+        .neon-button .icon { 
+            margin-right: 8px; 
+            font-size: 1.1em; /* <-- Ini membuat ikon terlihat */
+        } 
+        .neon-button:hover { background-color: #b33aff; box-shadow: 0 0 15px rgba(170, 0, 255, 1); }
+        /* --- AKHIR PERBAIKAN CSS TOMBOL --- */
+
+        /* CSS Halaman Developer */
+        .telegram-button {
+            background-color: #0088cc;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 25px;
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 136, 204, 0.7);
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-decoration: none;
+            width: 100%;
+        }
+        .telegram-button .icon { margin-right: 8px; font-size: 1em; }
+        .telegram-button:hover { background-color: #0099e6; box-shadow: 0 0 15px rgba(0, 136, 204, 1); }
+
+        /* CSS Halaman Profile */
+        .profile-details { list-style: none; padding: 0; margin-top: 20px; text-align: left; }
+        .profile-details li { display: flex; justify-content: space-between; padding: 12px 5px; border-bottom: 1px solid #2b0f4d; font-size: 1em; }
+        .profile-details li:last-child { border-bottom: none; }
+        .profile-details li span { color: #b3b3b3; }
+        .profile-details li strong { color: #ffffff; font-weight: bold; }
+        .profile-details li strong.status-active { color: #00ff7f; text-shadow: 0 0 5px rgba(0, 255, 127, 0.7); }
+
+        /* CSS Server Stats */
+        .stats-list { list-style: none; padding: 0; margin-top: 10px; }
+        .stats-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #2b0f4d; font-size: 1em; }
+        .stats-list li:last-child { border-bottom: none; }
+        .stats-list li span { color: #b3b3b3; }
+        .stats-list li strong { color: #00ff7f; font-size: 1.2em; }
+        
+        /* CSS Live Chat */
+        .chat-container { height: 300px; overflow-y: auto; margin-bottom: 15px; padding: 10px; background-color: #130525; border-radius: 8px; border: 1px solid #9d00ff; text-align: left; }
+        .chat-message { margin-bottom: 8px; padding: 8px; border-radius: 8px; max-width: 80%; display: inline-block; word-wrap: break-word; }
+        .message-box-ai { margin-right: auto; background-color: #2b0f4d; color: #ffffff; }
+        .message-box-user { margin-left: auto; background-color: #9d00ff; color: #ffffff; }
+        .chat-input-form { display: flex; gap: 10px; }
+        .chat-input-form input[type="text"] { flex-grow: 1; margin-top: 0; padding-right: 10px; }
+        .chat-input-form button { 
+            width: 40px; height: 40px; margin-top: 0; padding: 0; border-radius: 50%; 
+            background-color: #00ff7f; color: #130525; font-size: 1.2em; cursor: pointer; 
+            box-shadow: 0 0 10px rgba(0, 255, 127, 0.7); border: none;
+        }
+        
+        /* CSS Cek IP */
+        #ip-display-box {
+            background-color: #2b0f4d;
+            border: 1px solid #9d00ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            min-height: 50px;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #ffffff;
+            text-align: center;
+            word-wrap: break-word;
+        }
+        
+        /* --- PERBAIKAN CSS NAVIGASI BAWAH --- */
+        .bottom-nav { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            background-color: #1e0a38; 
+            border-top: 1px solid #9d00ff; 
+            box-shadow: 0 -4px 15px rgba(157, 0, 255, 0.4); 
+            display: flex; /* <-- Ini membuat ikon rata */
+            justify-content: space-around; /* <-- Ini membuat ikon rata */
+        }
+        .bottom-nav a { 
+            display: flex; 
+            flex-direction: column; /* <-- Ini membuat ikon di atas, label di bawah */
+            align-items: center; /* <-- Ini membuat ikon & label rata tengah */
+            color: #e0e0e0; 
+            text-decoration: none; 
+            padding: 10px 5px; 
+            flex-grow: 1; 
+            transition: all 0.3s ease; 
+            cursor: pointer; 
+        }
+        .bottom-nav a .icon { 
+            font-size: 1.5em; /* <-- Ini ukuran ikon */
+            margin-bottom: 5px; 
+        }
+        .bottom-nav a .label { 
+            font-size: 0.7em; /* <-- Ini ukuran label */
+            text-transform: uppercase; 
+        }
+        .bottom-nav a:hover, .bottom-nav a.active { 
+            color: #9d00ff; 
+            text-shadow: 0 0 10px rgba(157, 0, 255, 0.7); 
+        }
+        /* --- AKHIR PERBAIKAN CSS NAVIGASI BAWAH --- */
+
+        /* CSS untuk notifikasi kirim bug */
+        #bug-report-status {
+            font-size: 0.9em;
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+       𝔄𝔭𝔬𝔩𝔩𝔶𝔬𝔫-١١٣
+    </header>
+
+    <nav class="top-nav">
+        <a data-target="page-dasboard">DASBOARD</a>
+        <a data-target="page-profile">PROFILE</a>
+        <a data-target="page-developer">DEVELOPER</a>
+        <a href="/index.html">LOGOUT</a>
+    </nav>
+
+    <main class="main-content">
+        
+        <!-- Halaman 1: Dasboard -->
+        <div id="page-dasboard" class="page-content active">
+            <div class="profile-summary">
+                <img src="profile.jpg" alt="Profile Pic" id="dash-profile-pic">
+                <div class="user-id" id="dash-user-id">...</div>
+                <div class="user-details">
+                    Role: <strong id="dash-role">...</strong> • Exp: <strong id="dash-expired">...</strong>
+                </div>
+            </div>
+            <div class="content-box">
+                <!-- FORM "SEND BUG" DENGAN ID -->
+                <form id="send-bug-form"> 
+                    <label for="target-number">TARGET NUMBER</label>
+                    <input type="text" id="target-number" name="target-number" placeholder="e.g. 628xxxxxxxxxx" required>
+                    <label for="select-bug">SELECT BUG</label>
+                    <select id="select-bug" name="select-bug" required>
+                        <option value="">Select Bug...</option>
+                        <option value="Bug Type 1">Bug Type 1</option>
+                        <option value="Bug Type 2">Bug Type 2</option>
+                    </select>
+                    <!-- TOMBOL "SEND BUG" DENGAN HTML YANG BENAR -->
+                    <button type="submit" class="neon-button" id="send-bug-button">
+                        <span class="icon">✨</span> 
+                        <span id="send-bug-text">SEND BUG</span>
+                    </button>
+                    <div id="bug-report-status"></div>
+                </form>
+            </div>
+            <!-- Kotak Server Stats -->
+            <div class="content-box" style="margin-top: 20px; text-align: left;">
+                <h3 style="text-align: center; margin-top: 0; color: #ffffff;">📊 Server Stats</h3>
+                <ul class="stats-list">
+                    <li>
+                        <span>Online Users:</span>
+                        <strong id="online-user-count">0</strong>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Halaman 2: Musik (Spotify) -->
+        <div id="page-musik" class="page-content">
+            <div class="content-box" style="padding: 10px;">
+                <iframe style="border-radius:12px" src="https://open.spotify.com/embed/playlist/5jTKjBbzyfrm6KmdEJB20y?utm_source=generator" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
+            </div>
+        </div>
+        
+        <!-- Halaman 3: Cek IP -->
+        <div id="page-cekip" class="page-content">
+            <div class="content-box" style="text-align: center;">
+                <h1 style="margin-top: 0; color: #ffffff;">🌐 Cek IP Publik Anda</h1>
+                <p style="color: #b3b3b3; margin-top: 0; font-size: 0.9em;">Klik tombol di bawah untuk menampilkan alamat IP publik Anda.</p>
+                <div id="ip-display-box">Tekan tombol untuk memulai</div>
+                <button type="button" class="neon-button" id="check-ip-button" style="margin-top: 20px;">
+                    <span class="icon">📡</span> Tampilkan IP Saya
+                </button>
+            </div>
+        </div>
+        
+        <!-- Halaman 4: YouTube (Placeholder) -->
+        <div id="page-youtube" class="page-content">
+            <div class="content-box" style="text-align: center;">
+                <h1>📺 Halaman YouTube Downloader</h1>
+                <p>Fitur download video YouTube akan dibuat di sini.</p>
+            </div>
+        </div>
+        
+        <!-- Halaman 5: Live Chat -->
+        <div id="page-chatai" class="page-content">
+            <div class="content-box live-chat-box">
+                <h2 style="margin-top: 0; color: #ffffff;">LIVE CHAT ROOM</h2>
+                <div class="chat-container" id="chat-container"></div>
+                <form class="chat-input-form" id="chat-form">
+                    <input type="text" id="chat-input" placeholder="Ketik pesan Anda di sini...">
+                    <button type="submit">
+                        <span>▶️</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Halaman 6: Profile -->
+        <div id="page-profile" class="page-content">
+            <div class="content-box">
+                <h2 style="text-align: center; margin-top: 0;">Account Information</h2>
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <img src="profile.jpg" alt="Profile Pic" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid #9d00ff; box-shadow: 0 0 10px rgba(157, 0, 255, 0.7);" id="profile-pic">
+                    <div style="font-size: 2.5em; font-weight: bold; color: #ffffff; margin-top: 10px;" id="profile-userid">...</div>
+                </div>
+                <ul class="profile-details"> 
+                    <li><span>Username:</span><strong id="profile-username">...</strong></li>
+                    <li><span>Password:</span><strong>******</strong></li>
+                    <li><span>Role:</span><strong id="profile-role">...</strong></li>
+                    <li><span>Expired:</span><strong id="profile-expired">...</strong></li>
+                    <li><span>Status:</span><strong id="profile-status" class="status-active">...</strong></li>
+                </ul>
+                <a href="/index.html" class="neon-button" style="text-align: center; margin-top: 30px;">
+                    LOGOUT
+                </a>
+            </div>
+        </div>
+
+        <!-- Halaman 7: Developer -->
+        <div id="page-developer" class="page-content">
+            <div class="content-box" style="text-align: center;">
+                <h2 style="margin-top: 0;">Developer Info</h2>
+                <img src="profile.jpg" alt="Developer Pic" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid #9d00ff; box-shadow: 0 0 10px rgba(157, 0, 255, 0.7);">
+                <h3 style="color: #ffffff; margin-bottom: 5px; margin-top: 15px;">DARRXxHELL</h3>
+                <p style="color: #b3b3b3; margin-top: 0; font-size: 0.9em;">Web Developer & Owner</p>
+                <p style="font-size: 1em; margin-top: 25px;">Dibuat dengan cinta</p>
+                <a href="#" class="telegram-button" target="_blank">
+                    <span class="icon">✈️</span> Join Telegram Channel
+                </a>
+            </div>
+        </div>
+
+    </main>
+    
+    <!-- --- PERBAIKAN HTML NAVIGASI BAWAH --- -->
+    <nav class="bottom-nav">
+        <a data-target="page-dasboard" class="active">
+            <span class="icon">🏠</span>
+            <span class="label">Dasboard</span>
+        </a>
+        <a data-target="page-musik">
+            <span class="icon">🎵</span>
+            <span class="label">Musik</span>
+        </a>
+        <a data-target="page-cekip">
+            <span class="icon">🌐</span>
+            <span class="label">Cek IP</span>
+        </a>
+        <a data-target="page-youtube">
+            <span class="icon">📺</span>
+            <span class="label">YouTube</span>
+        </a>
+        <a data-target="page-chatai">
+            <span class="icon">💬</span>
+            <span class="label">Live Chat</span>
+        </a>
+    </nav>
+    <!-- --- AKHIR PERBAIKAN HTML --- -->
+
+
+    <script>
+        // --- KODE JAVASCRIPT (TETAP SAMA) ---
+        const LOGGED_IN_USERNAME = localStorage.getItem('loggedInUser') || 'admin';
+        
+        function formatTanggal(dateString) {
+            const options = { year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' };
+            return new Date(dateString).toLocaleString('id-ID', options).replace(/\./g, '/').replace(' ', ', ');
+        }
+
+        async function loadUserData() {
+            if (!LOGGED_IN_USERNAME) return;
+            try {
+                const response = await fetch(`/get-user-data?username=${LOGGED_IN_USERNAME}`);
+                if (!response.ok) return;
+                const user = await response.json();
+                const expiredFormatted = formatTanggal(user.expiredDate);
+                
+                document.getElementById('dash-user-id').textContent = user.username;
+                document.getElementById('dash-role').textContent = user.role;
+                document.getElementById('dash-expired').textContent = expiredFormatted;
+                
+                document.getElementById('profile-userid').textContent = user.username;
+                document.getElementById('profile-username').textContent = user.username;
+                document.getElementById('profile-role').textContent = user.role;
+                document.getElementById('profile-expired').textContent = expiredFormatted;
+                document.getElementById('profile-status').textContent = 'Active';
+            } catch (error) {
+                console.error("Gagal memuat data user:", error);
+                document.getElementById('dash-user-id').textContent = "Error";
+                document.getElementById('profile-username').textContent = "Error";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadUserData(); 
+            const navLinks = document.querySelectorAll('.top-nav a[data-target], .bottom-nav a[data-target]');
+            const pages = document.querySelectorAll('.page-content');
+            
+            function changePage(targetId) {
+                pages.forEach(page => { page.classList.remove('active'); });
+                navLinks.forEach(link => { link.classList.remove('active'); });
+                const targetPage = document.getElementById(targetId);
+                if (targetPage) { 
+                    targetPage.classList.add('active'); 
+                    if (targetId === 'page-chatai') {
+                        setTimeout(() => {
+                            const container = document.getElementById('chat-container');
+                            if(container) container.scrollTop = container.scrollHeight;
+                        }, 100);
+                        loadChatHistory(); 
+                    }
+                }
+                document.querySelectorAll(`a[data-target="${targetId}"]`).forEach(activeLink => {
+                    activeLink.classList.add('active');
+                });
+            }
+            navLinks.forEach(link => {
+                link.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    const targetId = link.getAttribute('data-target');
+                    changePage(targetId);
+                });
+            });
+            changePage('page-dasboard');
+
+            // --- KODE LIVE CHAT (SOCKET.IO) ---
+            const socket = io(); 
+            const chatForm = document.getElementById('chat-form');
+            const chatInput = document.getElementById('chat-input');
+            const chatContainer = document.getElementById('chat-container');
+            
+            function appendMessage(msg, isHistory = false) {
+                const messageDiv = document.createElement('div');
+                const senderClass = msg.username === LOGGED_IN_USERNAME ? 'message-box-user' : 'message-box-ai'; 
+                messageDiv.classList.add('chat-message', senderClass);
+                const time = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                messageDiv.innerHTML = `<div style="font-weight: bold; font-size: 0.9em; margin-bottom: 3px;">${msg.username} <span style="font-weight: normal; font-size: 0.8em; color: #a0a0a0;">(${time})</span></div>${msg.message}`;
+                if (senderClass === 'message-box-user') { messageDiv.style.marginLeft = 'auto'; } else { messageDiv.style.marginRight = 'auto'; }
+                if(chatContainer) chatContainer.appendChild(messageDiv);
+                if (!isHistory && chatContainer) { chatContainer.scrollTop = chatContainer.scrollHeight; }
+            }
+            
+            if(chatForm) { 
+                chatForm.addEventListener('submit', (event) => {
+                    event.preventDefault(); 
+                    const message = chatInput.value.trim();
+                    if (message) {
+                        socket.emit('chat message', { username: LOGGED_IN_USERNAME, message: message }); 
+                        chatInput.value = '';
+                    }
+                });
+            }
+            socket.on('chat message', (msg) => { appendMessage(msg); });
+            
+            async function loadChatHistory() {
+                try {
+                    const response = await fetch('/chat-history');
+                    const history = await response.json();
+                    if(chatContainer) chatContainer.innerHTML = '';
+                    history.forEach(msg => { appendMessage(msg, true); });
+                    if(chatContainer) chatContainer.scrollTop = chatContainer.scrollHeight;
+                } catch (error) { console.error('Gagal memuat riwayat chat:', error); }
+            }
+            
+            socket.on('user count update', (count) => {
+                const countElement = document.getElementById('online-user-count');
+                if (countElement) { countElement.textContent = count; }
+            });
+
+            // --- KODE CEK IP ---
+            const checkIpButton = document.getElementById('check-ip-button');
+            const ipDisplay = document.getElementById('ip-display-box');
+            if(checkIpButton) { 
+                checkIpButton.addEventListener('click', async () => {
+                    ipDisplay.textContent = 'Mencari IP...';
+                    try {
+                        const response = await fetch('/get-my-ip');
+                        const data = await response.json();
+                        if (data.ipAddress) { ipDisplay.textContent = data.ipAddress; } else { ipDisplay.textContent = 'Gagal mengambil IP'; }
+                    } catch (error) { console.error('Gagal fetch IP:', error); ipDisplay.textContent = 'Error koneksi ke server'; }
+                });
+            }
+            
+            // --- KODE "SEND BUG" ---
+            const sendBugForm = document.getElementById('send-bug-form');
+            const sendBugButton = document.getElementById('send-bug-button');
+            const sendBugText = document.getElementById('send-bug-text');
+            const bugReportStatus = document.getElementById('bug-report-status');
+
+            if (sendBugForm) {
+                sendBugForm.addEventListener('submit', async (event) => {
+                    event.preventDefault(); 
+                    sendBugText.textContent = 'MENGIRIM...';
+                    sendBugButton.disabled = true;
+                    bugReportStatus.style.display = 'none';
+                    const formData = new FormData(sendBugForm);
+                    const data = Object.fromEntries(formData.entries());
+                    try {
+                        const response = await fetch('/send-bug', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', },
+                            body: JSON.stringify(data),
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            bugReportStatus.textContent = 'Bug report berhasil terkirim!';
+                            bugReportStatus.style.color = '#00ff7f';
+                            sendBugForm.reset(); 
+                        } else {
+                            bugReportStatus.textContent = result.message || 'Gagal mengirim email.';
+                            bugReportStatus.style.color = '#ff004c';
+                        }
+                    } catch (error) {
+                        bugReportStatus.textContent = 'Error koneksi ke server.';
+                        bugReportStatus.style.color = '#ff004c';
+                    }
+                    bugReportStatus.style.display = 'block';
+                    sendBugButton.disabled = false;
+                    setTimeout(() => {
+                        sendBugText.textContent = 'SEND BUG';
+                        bugReportStatus.style.display = 'none';
+                    }, 3000);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
